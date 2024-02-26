@@ -40,6 +40,7 @@ const userType = new GraphQLObjectType({
     id: { type: GraphQLID },
     name: { type: GraphQLString },
     balance: { type: GraphQLFloat },
+    profile: { type: profileType },
   }),
 });
 
@@ -114,6 +115,12 @@ const RootQuery = new GraphQLObjectType({
         });
       },
     },
+    users: {
+      type: new GraphQLList(userType),
+      async resolve(_parent, _args) {
+        return prisma.user.findMany();
+      },
+    },
     user: {
       type: userType,
       args: {
@@ -126,12 +133,6 @@ const RootQuery = new GraphQLObjectType({
         return await prisma.user.findUnique({
           where: { id },
         });
-      },
-    },
-    users: {
-      type: new GraphQLList(userType),
-      async resolve(_parent, _args) {
-        return prisma.user.findMany();
       },
     },
     profiles: {

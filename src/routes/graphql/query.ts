@@ -1,12 +1,12 @@
 import {
   GraphQLObjectType,
   GraphQLString,
-  GraphQLID,
   GraphQLInt,
   GraphQLList,
   GraphQLFloat,
   GraphQLBoolean,
   GraphQLEnumType,
+  GraphQLID,
 } from 'graphql';
 import { GraphQLSchema } from 'graphql';
 import { UUIDType } from './types/uuid.js';
@@ -27,32 +27,37 @@ const memberType = new GraphQLObjectType({
 const postType = new GraphQLObjectType({
   name: 'postType',
   fields: () => ({
-    id: { type: GraphQLID },
+    id: { type: UUIDType },
     title: { type: GraphQLString },
     content: { type: GraphQLString },
     authorId: { type: GraphQLString },
+    // relationships
+    // author: { type: userType },
   }),
 });
 
 const userType = new GraphQLObjectType({
   name: 'userType',
   fields: () => ({
-    id: { type: GraphQLID },
+    id: { type: UUIDType },
     name: { type: GraphQLString },
     balance: { type: GraphQLFloat },
+    // relationships
     profile: { type: profileType },
+    posts: { type: postType },
   }),
 });
 
 const profileType = new GraphQLObjectType({
   name: 'profileType',
   fields: () => ({
-    id: { type: GraphQLID },
+    id: { type: UUIDType },
     isMale: { type: GraphQLBoolean },
     yearOfBirth: { type: GraphQLInt },
-    // todo: relations with other tables
-    // userId: userFields.id,
-    // memberTypeId: memberTypeFields.id,
+    userId: { type: UUIDType },
+    memberTypeId: { type: GraphQLID },
+    // relationships
+    memberType: { type: memberType },
   }),
 });
 
@@ -98,7 +103,11 @@ const RootQuery = new GraphQLObjectType({
     posts: {
       type: new GraphQLList(postType),
       async resolve(_parent, _args) {
-        return prisma.post.findMany();
+        return prisma.post.findMany({
+          include: {
+            author: true,
+          },
+        });
       },
     },
     post: {
@@ -112,13 +121,25 @@ const RootQuery = new GraphQLObjectType({
         const { id } = args;
         return await prisma.post.findUnique({
           where: { id },
+          include: {
+            author: true,
+          },
         });
       },
     },
     users: {
       type: new GraphQLList(userType),
       async resolve(_parent, _args) {
-        return prisma.user.findMany();
+        return prisma.user.findMany({
+          include: {
+            profile: {
+              include: {
+                memberType: true,
+              },
+            },
+            posts: true,
+          },
+        });
       },
     },
     user: {
@@ -130,9 +151,18 @@ const RootQuery = new GraphQLObjectType({
       },
       async resolve(_parent, args: { [key: string]: string }) {
         const { id } = args;
-        return await prisma.user.findUnique({
+        const user = await prisma.user.findFirst({
           where: { id },
+          include: {
+            profile: {
+              include: {
+                memberType: true,
+              },
+            },
+            posts: true,
+          },
         });
+        return user;
       },
     },
     profiles: {
@@ -150,9 +180,13 @@ const RootQuery = new GraphQLObjectType({
       },
       async resolve(_parent, args: { [key: string]: string }) {
         const { id } = args;
-        return await prisma.profile.findUnique({
+        const profile = await prisma.profile.findFirst({
           where: { id },
+          include: {
+            memberType: true,
+          },
         });
+        return profile;
       },
     },
   },
@@ -161,5 +195,5 @@ const RootQuery = new GraphQLObjectType({
 export const nonSDLSchema = new GraphQLSchema({
   query: RootQuery,
   // mutation: Mutations
-  types: [UUIDType, MemberTypeId],
+  types: [],
 });

@@ -159,7 +159,7 @@ const RootQuery = new GraphQLObjectType({
                 memberType: true,
               },
             },
-            posts: true,
+            posts: true, //todo: not work, couse id for userId field is named authorId, I don't now what this deal doing
           },
         });
         return user;

@@ -2,6 +2,9 @@ import { buildSchema } from 'graphql';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+/*
+  stay here for academic goals
+*/
 
 export const schema = buildSchema(`
   type memberType {

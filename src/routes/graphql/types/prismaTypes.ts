@@ -7,6 +7,7 @@ import {
   GraphQLList,
   GraphQLBoolean,
   GraphQLEnumType,
+  GraphQLInputObjectType,
 } from 'graphql';
 import { UUIDType } from './uuid.js';
 
@@ -19,6 +20,7 @@ export const memberType = new GraphQLObjectType({
     postsLimitPerMonth: { type: GraphQLInt },
   }),
 });
+
 export const postType = new GraphQLObjectType({
   name: 'postType',
   fields: () => ({
@@ -27,7 +29,8 @@ export const postType = new GraphQLObjectType({
     content: { type: GraphQLString },
   }),
 });
-const SubscriberType = new GraphQLObjectType({
+
+export const SubscriberType = new GraphQLObjectType({
   name: 'SubscriberType',
   fields: () => ({
     id: { type: UUIDType },
@@ -36,6 +39,7 @@ const SubscriberType = new GraphQLObjectType({
     subscribedToUser: { type: new GraphQLList(SubscriberType) },
   }),
 });
+
 export const userType = new GraphQLObjectType({
   name: 'userType',
   fields: () => ({
@@ -49,6 +53,7 @@ export const userType = new GraphQLObjectType({
     subscribedToUser: { type: new GraphQLList(SubscriberType) },
   }),
 });
+
 export const profileType = new GraphQLObjectType({
   name: 'profileType',
   fields: () => ({
@@ -61,6 +66,7 @@ export const profileType = new GraphQLObjectType({
     memberType: { type: memberType },
   }),
 });
+
 export const MemberTypeId = new GraphQLEnumType({
   name: 'MemberTypeId',
   values: {
@@ -69,4 +75,31 @@ export const MemberTypeId = new GraphQLEnumType({
     },
     business: { value: 'business' },
   },
+});
+
+export const CreatePostInput = new GraphQLInputObjectType({
+  name: 'CreatePostInput',
+  fields: () => ({
+    authorId: { type: UUIDType },
+    content: { type: GraphQLString },
+    title: { type: GraphQLString },
+  }),
+});
+
+export const CreateUserInput = new GraphQLInputObjectType({
+  name: 'CreateUserInput',
+  fields: () => ({
+    name: { type: UUIDType },
+    balance: { type: GraphQLFloat },
+  }),
+});
+
+export const CreateProfileInput = new GraphQLInputObjectType({
+  name: 'CreateProfileInput',
+  fields: () => ({
+    userId: { type: UUIDType },
+    memberTypeId: { type: MemberTypeId },
+    isMale: { type: GraphQLBoolean },
+    yearOfBirth: { type: GraphQLInt },
+  }),
 });

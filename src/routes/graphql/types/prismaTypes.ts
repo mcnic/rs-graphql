@@ -1,0 +1,72 @@
+import {
+  GraphQLObjectType,
+  GraphQLID,
+  GraphQLFloat,
+  GraphQLInt,
+  GraphQLString,
+  GraphQLList,
+  GraphQLBoolean,
+  GraphQLEnumType,
+} from 'graphql';
+import { UUIDType } from './uuid.js';
+
+// export let prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>;
+export const memberType = new GraphQLObjectType({
+  name: 'memberType',
+  fields: () => ({
+    id: { type: GraphQLID },
+    discount: { type: GraphQLFloat },
+    postsLimitPerMonth: { type: GraphQLInt },
+  }),
+});
+export const postType = new GraphQLObjectType({
+  name: 'postType',
+  fields: () => ({
+    id: { type: UUIDType },
+    title: { type: GraphQLString },
+    content: { type: GraphQLString },
+  }),
+});
+const SubscriberType = new GraphQLObjectType({
+  name: 'SubscriberType',
+  fields: () => ({
+    id: { type: UUIDType },
+    name: { type: GraphQLString },
+    userSubscribedTo: { type: new GraphQLList(SubscriberType) },
+    subscribedToUser: { type: new GraphQLList(SubscriberType) },
+  }),
+});
+export const userType = new GraphQLObjectType({
+  name: 'userType',
+  fields: () => ({
+    id: { type: UUIDType },
+    name: { type: GraphQLString },
+    balance: { type: GraphQLFloat },
+    // relationships
+    profile: { type: profileType },
+    posts: { type: new GraphQLList(postType) },
+    userSubscribedTo: { type: new GraphQLList(SubscriberType) },
+    subscribedToUser: { type: new GraphQLList(SubscriberType) },
+  }),
+});
+export const profileType = new GraphQLObjectType({
+  name: 'profileType',
+  fields: () => ({
+    id: { type: UUIDType },
+    isMale: { type: GraphQLBoolean },
+    yearOfBirth: { type: GraphQLInt },
+    userId: { type: UUIDType },
+    memberTypeId: { type: GraphQLID },
+    // relationships
+    memberType: { type: memberType },
+  }),
+});
+export const MemberTypeId = new GraphQLEnumType({
+  name: 'MemberTypeId',
+  values: {
+    basic: {
+      value: 'basic',
+    },
+    business: { value: 'business' },
+  },
+});

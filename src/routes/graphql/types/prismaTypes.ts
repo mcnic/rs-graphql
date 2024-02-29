@@ -61,7 +61,7 @@ export const profileType = new GraphQLObjectType({
     isMale: { type: GraphQLBoolean },
     yearOfBirth: { type: GraphQLInt },
     userId: { type: UUIDType },
-    memberTypeId: { type: GraphQLID },
+    memberTypeId: { type: MemberTypeId },
     // relationships
     memberType: { type: memberType },
   }),

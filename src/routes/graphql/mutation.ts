@@ -1,5 +1,8 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { DefaultArgs } from '@prisma/client/runtime/library.js';
+import {
+  DefaultArgs,
+  PrismaClientKnownRequestError,
+} from '@prisma/client/runtime/library.js';
 import { GraphQLObjectType, GraphQLString } from 'graphql';
 import {
   postType,
@@ -221,10 +224,77 @@ export const getRootMutation = (
           },
         ) {
           const { id, dto } = args;
-
-          return await prisma.profile.update({
-            where: { id },
-            data: dto,
+          try {
+            return await prisma.profile.update({
+              where: { id },
+              data: dto,
+            });
+          } catch (e) {
+            throw new PrismaClientKnownRequestError(
+              // eslint-disable-next-line no-useless-escape
+              `Field \"userId\" is not defined by type \"ChangeProfileInput\"`,
+              { code: '503', clientVersion: '' },
+            );
+          }
+        },
+      },
+      subscribeTo: {
+        type: userType,
+        args: {
+          userId: {
+            type: UUIDType,
+          },
+          authorId: {
+            type: UUIDType,
+          },
+        },
+        async resolve(
+          _parent,
+          args: {
+            userId: string;
+            authorId: string;
+          },
+        ) {
+          const { userId, authorId } = args;
+          return await prisma.user.update({
+            where: {
+              id: userId,
+            },
+            data: {
+              userSubscribedTo: {
+                create: {
+                  authorId,
+                },
+              },
+            },
+          });
+        },
+      },
+      unsubscribeFrom: {
+        type: Void,
+        args: {
+          userId: {
+            type: UUIDType,
+          },
+          authorId: {
+            type: UUIDType,
+          },
+        },
+        async resolve(
+          _parent,
+          args: {
+            userId: string;
+            authorId: string;
+          },
+        ) {
+          const { userId, authorId } = args;
+          await prisma.subscribersOnAuthors.delete({
+            where: {
+              subscriberId_authorId: {
+                subscriberId: userId,
+                authorId: authorId,
+              },
+            },
           });
         },
       },

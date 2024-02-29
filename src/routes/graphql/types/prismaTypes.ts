@@ -1,3 +1,5 @@
+import { Prisma, PrismaClient } from '@prisma/client';
+import { DefaultArgs } from '@prisma/client/runtime/library.js';
 import {
   GraphQLObjectType,
   GraphQLID,
@@ -11,6 +13,58 @@ import {
 } from 'graphql';
 import { UUIDType } from './uuid.js';
 
+export const getUserType = (
+  prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+) => {
+  const UserType: GraphQLObjectType = new GraphQLObjectType({
+    name: 'User',
+    fields: () => ({
+      id: { type: UUIDType },
+      name: { type: GraphQLString },
+      balance: { type: GraphQLFloat },
+      profile: { type: profileType },
+      posts: { type: new GraphQLList(postType) },
+      userSubscribedTo: {
+        type: new GraphQLList(UserType),
+        resolve: async (source: { id: string }) => {
+          return await prisma.user.findMany({
+            where: {
+              subscribedToUser: {
+                some: {
+                  subscriberId: source.id,
+                },
+              },
+            },
+            include: {
+              userSubscribedTo: true,
+              subscribedToUser: true,
+            },
+          });
+        },
+      },
+      subscribedToUser: {
+        type: new GraphQLList(UserType),
+        resolve: async (source: { id: string }) => {
+          return await prisma.user.findMany({
+            where: {
+              userSubscribedTo: {
+                some: {
+                  authorId: source.id,
+                },
+              },
+            },
+            include: {
+              userSubscribedTo: true,
+              subscribedToUser: true,
+            },
+          });
+        },
+      },
+    }),
+  });
+
+  return UserType;
+};
 export const memberType = new GraphQLObjectType({
   name: 'memberType',
   fields: () => ({
@@ -34,20 +88,6 @@ export const SubscriberType = new GraphQLObjectType({
   fields: () => ({
     id: { type: UUIDType },
     name: { type: GraphQLString },
-    userSubscribedTo: { type: new GraphQLList(SubscriberType) },
-    subscribedToUser: { type: new GraphQLList(SubscriberType) },
-  }),
-});
-
-export const userType = new GraphQLObjectType({
-  name: 'userType',
-  fields: () => ({
-    id: { type: UUIDType },
-    name: { type: GraphQLString },
-    balance: { type: GraphQLFloat },
-    // relationships
-    profile: { type: profileType },
-    posts: { type: new GraphQLList(postType) },
     userSubscribedTo: { type: new GraphQLList(SubscriberType) },
     subscribedToUser: { type: new GraphQLList(SubscriberType) },
   }),

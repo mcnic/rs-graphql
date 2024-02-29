@@ -10,7 +10,6 @@ import {
   CreateUserInput,
   CreateProfileInput,
   profileType,
-  userType,
   ChangePostInput,
   ChangeUserInput,
   ChangeProfileInput,
@@ -20,9 +19,10 @@ import { Void } from './types/scalar-void.js';
 
 export const getRootMutation = (
   prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+  UserType: GraphQLObjectType,
 ) => {
   return new GraphQLObjectType({
-    name: 'RootMutationType',
+    name: 'Mutation',
     fields: {
       hello1: {
         type: GraphQLString,
@@ -98,7 +98,7 @@ export const getRootMutation = (
         },
       },
       createUser: {
-        type: userType,
+        type: UserType,
         args: {
           dto: {
             type: CreateUserInput,
@@ -135,7 +135,7 @@ export const getRootMutation = (
         },
       },
       changeUser: {
-        type: userType,
+        type: UserType,
         args: {
           id: {
             type: UUIDType,
@@ -239,7 +239,7 @@ export const getRootMutation = (
         },
       },
       subscribeTo: {
-        type: userType,
+        type: UserType,
         args: {
           userId: {
             type: UUIDType,

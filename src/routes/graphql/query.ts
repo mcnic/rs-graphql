@@ -1,22 +1,15 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { DefaultArgs } from '@prisma/client/runtime/library.js';
-import { GraphQLObjectType, GraphQLString, GraphQLList } from 'graphql';
+import { GraphQLObjectType, GraphQLString, GraphQLList, GraphQLFloat } from 'graphql';
 import { UUIDType } from './types/uuid.js';
-import { addSubscribedToUser } from './subscribers.js';
-import { addUserSubscribedTo } from './subscribers.js';
-import {
-  memberType,
-  MemberTypeId,
-  postType,
-  userType,
-  profileType,
-} from './types/prismaTypes.js';
+import { memberType, MemberTypeId, postType, profileType } from './types/prismaTypes.js';
 
 export const getRootQuery = (
   prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
+  UserType: GraphQLObjectType,
 ) => {
   return new GraphQLObjectType({
-    name: 'RootQueryType',
+    name: 'Query',
     fields: {
       hello: {
         type: GraphQLString,
@@ -72,7 +65,7 @@ export const getRootQuery = (
         },
       },
       users: {
-        type: new GraphQLList(userType),
+        type: new GraphQLList(UserType),
         async resolve(_parent, _args) {
           return prisma.user.findMany({
             include: {
@@ -87,7 +80,7 @@ export const getRootQuery = (
         },
       },
       user: {
-        type: userType,
+        type: UserType,
         args: {
           id: {
             type: UUIDType,
@@ -111,10 +104,45 @@ export const getRootQuery = (
 
           if (!user) return null;
 
-          const injected1 = await addUserSubscribedTo(user, prisma);
-          const inhected2 = await addSubscribedToUser(injected1, prisma);
+          return user;
 
-          return inhected2;
+          // const injected1 = await addUserSubscribedTo(user, prisma);
+          // const inhected2 = await addSubscribedToUser(injected1, prisma);
+
+          // return inhected2;
+        },
+      },
+      userSubscribedTo: {
+        type: UserType,
+        args: {
+          id: {
+            type: UUIDType,
+          },
+        },
+        async resolve(_parent, args: { [key: string]: string }) {
+          console.log('userSubscribedTo', args);
+
+          const { id } = args;
+          const draftUserSubscribedTo = await prisma.user.findMany({
+            where: {
+              subscribedToUser: {
+                some: {
+                  subscriberId: id,
+                },
+              },
+            },
+            include: {
+              userSubscribedTo: true,
+              subscribedToUser: true,
+            },
+          });
+
+          // if (!draftUserSubscribedTo.length) return null;
+
+          // const injected1 = await addUserSubscribedTo(user, prisma);
+          // const inhected2 = await addSubscribedToUser(injected1, prisma);
+
+          return draftUserSubscribedTo;
         },
       },
       profiles: {

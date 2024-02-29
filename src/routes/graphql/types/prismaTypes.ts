@@ -11,7 +11,6 @@ import {
 } from 'graphql';
 import { UUIDType } from './uuid.js';
 
-// export let prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>;
 export const memberType = new GraphQLObjectType({
   name: 'memberType',
   fields: () => ({

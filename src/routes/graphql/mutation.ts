@@ -9,6 +9,8 @@ import {
   profileType,
   userType,
 } from './types/prismaTypes.js';
+import { UUIDType } from './types/uuid.js';
+import { Void } from './types/scalar-void.js';
 
 export const getRootMutation = (
   prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
@@ -46,6 +48,20 @@ export const getRootMutation = (
           });
         },
       },
+      deletePost: {
+        type: Void,
+        args: {
+          id: {
+            type: UUIDType,
+          },
+        },
+        async resolve(_parent, args: { [key: string]: string }) {
+          const { id } = args;
+          await prisma.post.delete({
+            where: { id },
+          });
+        },
+      },
       createUser: {
         type: userType,
         args: {
@@ -66,6 +82,20 @@ export const getRootMutation = (
 
           return await prisma.user.create({
             data: dto,
+          });
+        },
+      },
+      deleteUser: {
+        type: Void,
+        args: {
+          id: {
+            type: UUIDType,
+          },
+        },
+        async resolve(_parent, args: { [key: string]: string }) {
+          const { id } = args;
+          await prisma.user.delete({
+            where: { id },
           });
         },
       },
@@ -91,6 +121,20 @@ export const getRootMutation = (
 
           return await prisma.profile.create({
             data: dto,
+          });
+        },
+      },
+      deleteProfile: {
+        type: Void,
+        args: {
+          id: {
+            type: UUIDType,
+          },
+        },
+        async resolve(_parent, args: { [key: string]: string }) {
+          const { id } = args;
+          await prisma.profile.delete({
+            where: { id },
           });
         },
       },

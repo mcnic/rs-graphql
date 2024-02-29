@@ -8,6 +8,9 @@ import {
   CreateProfileInput,
   profileType,
   userType,
+  ChangePostInput,
+  ChangeUserInput,
+  ChangeProfileInput,
 } from './types/prismaTypes.js';
 import { UUIDType } from './types/uuid.js';
 import { Void } from './types/scalar-void.js';
@@ -62,6 +65,35 @@ export const getRootMutation = (
           });
         },
       },
+      changePost: {
+        type: postType,
+        args: {
+          id: {
+            type: UUIDType,
+          },
+          dto: {
+            type: ChangePostInput,
+          },
+        },
+        async resolve(
+          _parent,
+          args: {
+            id: string;
+            dto: {
+              authorId: string;
+              content: string;
+              title: string;
+            };
+          },
+        ) {
+          const { id, dto } = args;
+
+          return await prisma.post.update({
+            where: { id },
+            data: dto,
+          });
+        },
+      },
       createUser: {
         type: userType,
         args: {
@@ -96,6 +128,34 @@ export const getRootMutation = (
           const { id } = args;
           await prisma.user.delete({
             where: { id },
+          });
+        },
+      },
+      changeUser: {
+        type: userType,
+        args: {
+          id: {
+            type: UUIDType,
+          },
+          dto: {
+            type: ChangeUserInput,
+          },
+        },
+        async resolve(
+          _parent,
+          args: {
+            id: string;
+            dto: {
+              name: string;
+              balance: number;
+            };
+          },
+        ) {
+          const { id, dto } = args;
+
+          return await prisma.user.update({
+            where: { id },
+            data: dto,
           });
         },
       },
@@ -135,6 +195,36 @@ export const getRootMutation = (
           const { id } = args;
           await prisma.profile.delete({
             where: { id },
+          });
+        },
+      },
+      changeProfile: {
+        type: profileType,
+        args: {
+          id: {
+            type: UUIDType,
+          },
+          dto: {
+            type: ChangeProfileInput,
+          },
+        },
+        async resolve(
+          _parent,
+          args: {
+            id: string;
+            dto: {
+              userId: string;
+              memberTypeId: string;
+              isMale: boolean;
+              yearOfBirth: number;
+            };
+          },
+        ) {
+          const { id, dto } = args;
+
+          return await prisma.profile.update({
+            where: { id },
+            data: dto,
           });
         },
       },

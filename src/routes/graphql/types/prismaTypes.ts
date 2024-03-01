@@ -171,3 +171,5 @@ export const ChangeProfileInput = new GraphQLInputObjectType({
     yearOfBirth: { type: GraphQLInt },
   }),
 });
+
+export type ParamsWithId = { id: string };

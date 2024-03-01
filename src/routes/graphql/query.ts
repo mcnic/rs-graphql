@@ -2,7 +2,13 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import { DefaultArgs } from '@prisma/client/runtime/library.js';
 import { GraphQLObjectType, GraphQLString, GraphQLList } from 'graphql';
 import { UUIDType } from './types/uuid.js';
-import { MemberType, MemberTypeId, PostType, ProfileType } from './types/prismaTypes.js';
+import {
+  MemberType,
+  MemberTypeId,
+  ParamsWithId,
+  PostType,
+  ProfileType,
+} from './types/prismaTypes.js';
 
 export const getRootQuery = (
   prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
@@ -30,8 +36,7 @@ export const getRootQuery = (
             type: MemberTypeId,
           },
         },
-        async resolve(_parent, args: { [key: string]: string }) {
-          const { id } = args;
+        async resolve(_parent, { id }: ParamsWithId) {
           return await prisma.memberType.findUnique({
             where: { id },
           });
@@ -54,8 +59,7 @@ export const getRootQuery = (
             type: UUIDType,
           },
         },
-        async resolve(_parent, args: { [key: string]: string }) {
-          const { id } = args;
+        async resolve(_parent, { id }: ParamsWithId) {
           return await prisma.post.findUnique({
             where: { id },
             include: {
@@ -86,8 +90,7 @@ export const getRootQuery = (
             type: UUIDType,
           },
         },
-        async resolve(_parent, args: { [key: string]: string }) {
-          const { id } = args;
+        async resolve(_parent, { id }: ParamsWithId) {
           return await prisma.user.findFirst({
             where: {
               id,
@@ -110,10 +113,7 @@ export const getRootQuery = (
             type: UUIDType,
           },
         },
-        async resolve(_parent, args: { [key: string]: string }) {
-          console.log('userSubscribedTo', args);
-
-          const { id } = args;
+        async resolve(_parent, { id }: { [key: string]: string }) {
           return await prisma.user.findMany({
             where: {
               subscribedToUser: {
@@ -142,8 +142,7 @@ export const getRootQuery = (
             type: UUIDType,
           },
         },
-        async resolve(_parent, args: { [key: string]: string }) {
-          const { id } = args;
+        async resolve(_parent, { id }: ParamsWithId) {
           const profile = await prisma.profile.findFirst({
             where: { id },
             include: {

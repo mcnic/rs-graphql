@@ -13,6 +13,7 @@ import {
   ChangePostInput,
   ChangeUserInput,
   ChangeProfileInput,
+  ParamsWithId,
 } from './types/prismaTypes.js';
 import { UUIDType } from './types/uuid.js';
 import { Void } from './types/scalar-void.js';
@@ -61,8 +62,7 @@ export const getRootMutation = (
             type: UUIDType,
           },
         },
-        async resolve(_parent, args: { [key: string]: string }) {
-          const { id } = args;
+        async resolve(_parent, { id }: ParamsWithId) {
           await prisma.post.delete({
             where: { id },
           });
@@ -127,8 +127,7 @@ export const getRootMutation = (
             type: UUIDType,
           },
         },
-        async resolve(_parent, args: { [key: string]: string }) {
-          const { id } = args;
+        async resolve(_parent, { id }: ParamsWithId) {
           await prisma.user.delete({
             where: { id },
           });
@@ -194,8 +193,7 @@ export const getRootMutation = (
             type: UUIDType,
           },
         },
-        async resolve(_parent, args: { [key: string]: string }) {
-          const { id } = args;
+        async resolve(_parent, { id }: ParamsWithId) {
           await prisma.profile.delete({
             where: { id },
           });

@@ -22,8 +22,8 @@ export const getUserType = (
       id: { type: UUIDType },
       name: { type: GraphQLString },
       balance: { type: GraphQLFloat },
-      profile: { type: profileType },
-      posts: { type: new GraphQLList(postType) },
+      profile: { type: ProfileType },
+      posts: { type: new GraphQLList(PostType) },
       userSubscribedTo: {
         type: new GraphQLList(UserType),
         resolve: async (source: { id: string }) => {
@@ -45,6 +45,7 @@ export const getUserType = (
       subscribedToUser: {
         type: new GraphQLList(UserType),
         resolve: async (source: { id: string }) => {
+          //todo: use 'in' for limiting of depth query
           return await prisma.user.findMany({
             where: {
               userSubscribedTo: {
@@ -65,7 +66,8 @@ export const getUserType = (
 
   return UserType;
 };
-export const memberType = new GraphQLObjectType({
+
+export const MemberType = new GraphQLObjectType({
   name: 'memberType',
   fields: () => ({
     id: { type: GraphQLID },
@@ -74,7 +76,7 @@ export const memberType = new GraphQLObjectType({
   }),
 });
 
-export const postType = new GraphQLObjectType({
+export const PostType = new GraphQLObjectType({
   name: 'postType',
   fields: () => ({
     id: { type: UUIDType },
@@ -93,7 +95,7 @@ export const SubscriberType = new GraphQLObjectType({
   }),
 });
 
-export const profileType = new GraphQLObjectType({
+export const ProfileType = new GraphQLObjectType({
   name: 'profileType',
   fields: () => ({
     id: { type: UUIDType },
@@ -102,7 +104,7 @@ export const profileType = new GraphQLObjectType({
     userId: { type: UUIDType },
     memberTypeId: { type: MemberTypeId },
     // relationships
-    memberType: { type: memberType },
+    memberType: { type: MemberType },
   }),
 });
 

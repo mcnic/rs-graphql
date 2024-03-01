@@ -5,11 +5,11 @@ import {
 } from '@prisma/client/runtime/library.js';
 import { GraphQLObjectType, GraphQLString } from 'graphql';
 import {
-  postType,
+  PostType,
   CreatePostInput,
   CreateUserInput,
   CreateProfileInput,
-  profileType,
+  ProfileType,
   ChangePostInput,
   ChangeUserInput,
   ChangeProfileInput,
@@ -31,7 +31,7 @@ export const getRootMutation = (
         },
       },
       createPost: {
-        type: postType,
+        type: PostType,
         args: {
           dto: {
             type: CreatePostInput,
@@ -69,7 +69,7 @@ export const getRootMutation = (
         },
       },
       changePost: {
-        type: postType,
+        type: PostType,
         args: {
           id: {
             type: UUIDType,
@@ -163,7 +163,7 @@ export const getRootMutation = (
         },
       },
       createProfile: {
-        type: profileType,
+        type: ProfileType,
         args: {
           dto: {
             type: CreateProfileInput,
@@ -202,7 +202,7 @@ export const getRootMutation = (
         },
       },
       changeProfile: {
-        type: profileType,
+        type: ProfileType,
         args: {
           id: {
             type: UUIDType,

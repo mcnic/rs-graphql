@@ -1,17 +1,15 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
-import { getRootQuery } from './query.js';
-import {
-  GraphQLObjectType,
-  GraphQLSchema,
-  graphql,
-  validate,
-  DocumentNode,
-  parse,
-} from 'graphql';
-import { getRootMutation } from './mutation.js';
-import { getUserType } from './types/prismaTypes.js';
+import { rootQuery } from './query.js';
+import { GraphQLSchema, graphql, validate, DocumentNode, parse } from 'graphql';
 import depthLimit from 'graphql-depth-limit';
+import { rootMutation } from './mutation.js';
+// import { getPrismaStats } from '../../../test/utils/requests.js';
+// import DataLoader from 'dataloader';
+
+// new DataLoader().prime();
+
+const dataloaders = new WeakMap();
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -26,11 +24,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async handler(req) {
-      const UserType: GraphQLObjectType = getUserType(prisma);
-
       const schema = new GraphQLSchema({
-        query: getRootQuery(prisma, UserType),
-        mutation: getRootMutation(prisma, UserType),
+        query: rootQuery,
+        mutation: rootMutation,
       });
 
       const document: DocumentNode = parse(req.body.query);
@@ -38,17 +34,30 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (validateResult.length)
         return {
           data: null,
-          errors: [{ message: 'exceeds maximum operation depth of 5' }],
+          errors: validateResult,
         };
 
-      return await graphql({
+      // const {
+      //   body: { operationHistory: beforeHistory },
+      // } = await getPrismaStats(fastify);
+
+      const res = await graphql({
         schema,
         source: req.body.query,
         variableValues: req.body.variables,
         contextValue: {
           prisma,
+          dataloaders,
         },
       });
+
+      // const {
+      //   body: { operationHistory: afterHistory },
+      // } = await getPrismaStats(fastify);
+
+      // console.log('=== afterHistory', afterHistory, beforeHistory);
+
+      return res;
     },
   });
 };

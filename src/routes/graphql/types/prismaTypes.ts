@@ -12,57 +12,96 @@ import {
 } from 'graphql';
 import { UUIDType } from './uuid.js';
 
-export const getUserType = (prisma: PrismaClient) => {
-  const UserType: GraphQLObjectType = new GraphQLObjectType({
-    name: 'User',
-    fields: () => ({
-      id: { type: UUIDType },
-      name: { type: GraphQLString },
-      balance: { type: GraphQLFloat },
-      profile: { type: ProfileType },
-      posts: { type: new GraphQLList(PostType) },
-      userSubscribedTo: {
-        type: new GraphQLList(UserType),
-        resolve: async (source: { id: string }) => {
-          return await prisma.user.findMany({
-            where: {
-              subscribedToUser: {
-                some: {
-                  subscriberId: source.id,
-                },
-              },
-            },
-            include: {
-              userSubscribedTo: true,
-              subscribedToUser: true,
-            },
-          });
-        },
-      },
-      subscribedToUser: {
-        type: new GraphQLList(UserType),
-        resolve: async (source: { id: string }) => {
-          //todo: use 'in' for limiting of depth query
-          return await prisma.user.findMany({
-            where: {
-              userSubscribedTo: {
-                some: {
-                  authorId: source.id,
-                },
-              },
-            },
-            include: {
-              userSubscribedTo: true,
-              subscribedToUser: true,
-            },
-          });
-        },
-      },
-    }),
-  });
+export type ContextType = { prisma: PrismaClient };
 
-  return UserType;
-};
+export const UserType: GraphQLObjectType = new GraphQLObjectType({
+  name: 'User',
+  fields: () => ({
+    id: { type: UUIDType },
+    name: { type: GraphQLString },
+    balance: { type: GraphQLFloat },
+    profile: {
+      type: ProfileType,
+      resolve({ id }: ParamsWithId, _args, context: ContextType) {
+        const { prisma } = context;
+        console.log('=== info User profile', id);
+
+        if (!id) return null;
+
+        return prisma.profile.findFirst({
+          where: { userId: id },
+          include: {
+            memberType: true,
+          },
+        });
+      },
+    },
+    posts: {
+      type: new GraphQLList(PostType),
+      resolve({ id }: ParamsWithId, _args, context: ContextType) {
+        const { prisma } = context;
+        console.log('=== info User post', id);
+
+        if (!id) return null;
+
+        return prisma.post.findMany({
+          where: {
+            authorId: id,
+          },
+          include: {
+            author: true,
+          },
+        });
+      },
+    },
+    userSubscribedTo: {
+      type: new GraphQLList(UserType),
+      resolve: ({ id }: ParamsWithId, _args, context: ContextType) => {
+        const { prisma } = context;
+        console.log('=== info User subscribeTo', id);
+
+        if (!id) return null;
+
+        return prisma.user.findMany({
+          where: {
+            subscribedToUser: {
+              some: {
+                subscriberId: id,
+              },
+            },
+          },
+          include: {
+            userSubscribedTo: true,
+            subscribedToUser: true,
+          },
+        });
+      },
+    },
+    subscribedToUser: {
+      type: new GraphQLList(UserType),
+      resolve: ({ id }: ParamsWithId, _args, context: ContextType) => {
+        if (!id) return null;
+
+        const { prisma } = context;
+        // console.log('=== info User subscribedToUser', id);
+
+        return prisma.user.findMany({
+          where: {
+            userSubscribedTo: {
+              some: {
+                authorId: id,
+              },
+            },
+          },
+          include: {
+            userSubscribedTo: true,
+            subscribedToUser: true,
+          },
+        });
+      },
+    },
+  }),
+});
 
 export const MemberType = new GraphQLObjectType({
   name: 'MemberType',

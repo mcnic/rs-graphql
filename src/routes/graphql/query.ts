@@ -1,5 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
-import { DefaultArgs } from '@prisma/client/runtime/library.js';
+import { PrismaClient } from '@prisma/client';
 import { GraphQLObjectType, GraphQLString, GraphQLList } from 'graphql';
 import { UUIDType } from './types/uuid.js';
 import {
@@ -10,10 +9,7 @@ import {
   ProfileType,
 } from './types/prismaTypes.js';
 
-export const getRootQuery = (
-  prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
-  UserType: GraphQLObjectType,
-) => {
+export const getRootQuery = (prisma: PrismaClient, UserType: GraphQLObjectType) => {
   return new GraphQLObjectType({
     name: 'Query',
     fields: {
@@ -102,29 +98,6 @@ export const getRootQuery = (
                 },
               },
               posts: true,
-            },
-          });
-        },
-      },
-      userSubscribedTo: {
-        type: UserType,
-        args: {
-          id: {
-            type: UUIDType,
-          },
-        },
-        async resolve(_parent, { id }: { [key: string]: string }) {
-          return await prisma.user.findMany({
-            where: {
-              subscribedToUser: {
-                some: {
-                  subscriberId: id,
-                },
-              },
-            },
-            include: {
-              userSubscribedTo: true,
-              subscribedToUser: true,
             },
           });
         },

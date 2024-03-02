@@ -1,5 +1,4 @@
-import { Prisma, PrismaClient } from '@prisma/client';
-import { DefaultArgs } from '@prisma/client/runtime/library.js';
+import { PrismaClient } from '@prisma/client';
 import {
   GraphQLObjectType,
   GraphQLID,
@@ -13,9 +12,7 @@ import {
 } from 'graphql';
 import { UUIDType } from './uuid.js';
 
-export const getUserType = (
-  prisma: PrismaClient<Prisma.PrismaClientOptions, never, DefaultArgs>,
-) => {
+export const getUserType = (prisma: PrismaClient) => {
   const UserType: GraphQLObjectType = new GraphQLObjectType({
     name: 'User',
     fields: () => ({
@@ -68,7 +65,7 @@ export const getUserType = (
 };
 
 export const MemberType = new GraphQLObjectType({
-  name: 'memberType',
+  name: 'MemberType',
   fields: () => ({
     id: { type: GraphQLID },
     discount: { type: GraphQLFloat },
@@ -77,7 +74,7 @@ export const MemberType = new GraphQLObjectType({
 });
 
 export const PostType = new GraphQLObjectType({
-  name: 'postType',
+  name: 'PostType',
   fields: () => ({
     id: { type: UUIDType },
     title: { type: GraphQLString },
@@ -96,14 +93,13 @@ export const SubscriberType = new GraphQLObjectType({
 });
 
 export const ProfileType = new GraphQLObjectType({
-  name: 'profileType',
+  name: 'ProfileType',
   fields: () => ({
     id: { type: UUIDType },
     isMale: { type: GraphQLBoolean },
     yearOfBirth: { type: GraphQLInt },
     userId: { type: UUIDType },
     memberTypeId: { type: MemberTypeId },
-    // relationships
     memberType: { type: MemberType },
   }),
 });

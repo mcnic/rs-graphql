@@ -5,14 +5,8 @@ import { GraphQLSchema, graphql, validate, DocumentNode, parse } from 'graphql';
 import depthLimit from 'graphql-depth-limit';
 import { rootMutation } from './mutation.js';
 import DataLoader from 'dataloader';
-// import { getPrismaStats } from '../../../test/utils/requests.js';
-// import DataLoader from 'dataloader';
-
-// new DataLoader().prime();
 
 const dataloaders = new WeakMap<WeakKey, DataLoader<unknown, unknown, unknown>>(); //<any, TUser4Subscribers>();
-// DataLoader<unknown, TUser4Subscribers, unknown>;
-//
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -40,9 +34,6 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           errors: validateResult,
         };
 
-      // const {
-      //   body: { operationHistory: beforeHistory },
-      // } = await getPrismaStats(fastify);
       const res = await graphql({
         schema,
         source: req.body.query,
@@ -50,15 +41,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         contextValue: {
           prisma,
           dataloaders,
-          // userLoader: new DataLoader((keys) => myBatchGetUsers(keys)),
         },
       });
-
-      // const {
-      //   body: { operationHistory: afterHistory },
-      // } = await getPrismaStats(fastify);
-
-      // console.log('=== afterHistory', afterHistory, beforeHistory);
 
       return res;
     },

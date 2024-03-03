@@ -9,11 +9,6 @@ import {
   ProfileType,
   UserType,
 } from './types/prismaTypes.js';
-// import DataLoader from 'dataloader';
-// import {
-//   parseResolveInfo,
-//   simplifyParsedResolveInfoFragmentWithType,
-// } from 'graphql-parse-resolve-info';
 
 export const rootQuery = new GraphQLObjectType({
   name: 'Query',
@@ -82,26 +77,9 @@ export const rootQuery = new GraphQLObjectType({
       type: new GraphQLList(UserType),
       resolve(_parent, _args, context: ContextType) {
         const { prisma } = context;
-        // console.log('=== info users');
-
-        // const parsedResolveInfoFragment = parseResolveInfo(info);
-        // const simplifiedFragment = simplifyParsedResolveInfoFragmentWithType(
-        //   parsedResolveInfoFragment,
-        //   info.returnType,
-        // );
-        // console.log('===fields', simplifiedFragment.fields);
-
-        // const { dataloaders } = context;
-        // const dl: DataLoader<string, unknown, string> | undefined = dataloaders.get(id);
-        // console.log('=== dataloaders', dataloaders, dl);
-        // let dl: DataLoader<string, unknown, string> | undefined = dataloaders.get(id);
-        // if (!dl) {
-        // const dl = new DataLoader<string, Object>(getUserData);
-        // return dl.load(id);
-        // dataloaders.set(id, dl);
-        // }
 
         return prisma.user.findMany({
+          // take: 10,
           include: {
             profile: {
               include: {
@@ -109,6 +87,8 @@ export const rootQuery = new GraphQLObjectType({
               },
             },
             posts: true,
+            subscribedToUser: true,
+            userSubscribedTo: true,
           },
         });
       },
@@ -144,7 +124,11 @@ export const rootQuery = new GraphQLObjectType({
         const { prisma } = context;
         // console.log('=== info profiles');
 
-        return prisma.profile.findMany();
+        return prisma.profile.findMany({
+          include: {
+            memberType: true,
+          },
+        });
       },
     },
     profile: {

@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import {
   GraphQLObjectType,
-  GraphQLID,
   GraphQLFloat,
   GraphQLInt,
   GraphQLString,
@@ -11,8 +10,12 @@ import {
   GraphQLInputObjectType,
 } from 'graphql';
 import { UUIDType } from './uuid.js';
+import DataLoader from 'dataloader';
 
-export type ContextType = { prisma: PrismaClient };
+export type ContextType = {
+  prisma: PrismaClient;
+  dataloaders: WeakMap<WeakKey, DataLoader<unknown, unknown, unknown>>;
+};
 
 export const UserType: GraphQLObjectType = new GraphQLObjectType({
   name: 'User',
@@ -22,25 +25,26 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
     balance: { type: GraphQLFloat },
     profile: {
       type: ProfileType,
-      resolve({ id }: ParamsWithId, _args, context: ContextType) {
-        const { prisma } = context;
-        console.log('=== info User profile', id);
+      //   resolve({ id }: ParamsWithId, _args, context: ContextType) {
+      //     const { prisma } = context;
+      //     // console.log('=== info User profile', id);
 
-        if (!id) return null;
+      //     if (!id) return null;
 
-        return prisma.profile.findFirst({
-          where: { userId: id },
-          include: {
-            memberType: true,
-          },
-        });
-      },
+      //     return prisma.profile.findFirst({
+      //       where: { userId: id },
+      //       include: {
+      //         memberType: true,
+      //       },
+      //     });
+      //   },
     },
     posts: {
       type: new GraphQLList(PostType),
+      /** need for loader test! */
       resolve({ id }: ParamsWithId, _args, context: ContextType) {
         const { prisma } = context;
-        console.log('=== info User post', id);
+        // console.log('=== info User post', id);
 
         if (!id) return null;
 
@@ -56,25 +60,42 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
     },
     userSubscribedTo: {
       type: new GraphQLList(UserType),
-      resolve: ({ id }: ParamsWithId, _args, context: ContextType) => {
-        const { prisma } = context;
-        console.log('=== info User subscribeTo', id);
+      resolve: async ({ id }: ParamsWithId, _args, context: ContextType, info) => {
+        const { prisma, dataloaders } = context;
+        // console.log('=== info User subscribeTo', id);
 
-        if (!id) return null;
+        let dl = dataloaders.get(info.fieldNodes);
 
-        return prisma.user.findMany({
-          where: {
-            subscribedToUser: {
-              some: {
-                subscriberId: id,
+        if (!dl) {
+          dl = new DataLoader(async (ids: any): Promise<[]> => {
+            const rows = await prisma.user.findMany({
+              where: {
+                subscribedToUser: {
+                  some: {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    subscriberId: { in: ids },
+                  },
+                },
               },
-            },
-          },
-          include: {
-            userSubscribedTo: true,
-            subscribedToUser: true,
-          },
-        });
+              include: {
+                userSubscribedTo: true,
+                subscribedToUser: true,
+              },
+            });
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            return ids.map((id) =>
+              rows.filter(
+                (row) =>
+                  row.subscribedToUser.filter((el) => el.subscriberId === id).length,
+              ),
+            );
+          });
+
+          dataloaders.set(info.fieldNodes, dl);
+        }
+
+        return dl.load(id);
       },
     },
     subscribedToUser: {
@@ -106,7 +127,7 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
 export const MemberType = new GraphQLObjectType({
   name: 'MemberType',
   fields: () => ({
-    id: { type: GraphQLID },
+    id: { type: MemberTypeId },
     discount: { type: GraphQLFloat },
     postsLimitPerMonth: { type: GraphQLInt },
   }),
@@ -139,7 +160,27 @@ export const ProfileType = new GraphQLObjectType({
     yearOfBirth: { type: GraphQLInt },
     userId: { type: UUIDType },
     memberTypeId: { type: MemberTypeId },
-    memberType: { type: MemberType },
+    memberType: {
+      type: MemberType,
+      /** need for loader test! */
+      resolve: (
+        { memberTypeId }: { memberTypeId: string },
+        _args,
+        context: ContextType,
+      ) => {
+        // console.log('=== info MemberType', memberTypeId);
+
+        if (!memberTypeId) return null;
+
+        const { prisma } = context;
+
+        return prisma.memberType.findFirst({
+          where: {
+            id: memberTypeId,
+          },
+        });
+      },
+    },
   }),
 });
 

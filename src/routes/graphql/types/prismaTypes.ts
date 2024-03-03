@@ -17,9 +17,36 @@ import {
   simplifyParsedResolveInfoFragmentWithType,
 } from 'graphql-parse-resolve-info';
 
+export type UserContextType = {
+  id: string;
+  name: string;
+  profile: {
+    id: string;
+    isMale: boolean;
+    yearOfBirth: number;
+    userId: string;
+    memberTypeId: string;
+  } | null;
+  posts: {
+    id: string;
+    title: string;
+    content: string;
+    authorId: string;
+  }[];
+  userSubscribedTo: {
+    subscriberId: string;
+    authorId: string;
+  }[];
+  subscribedToUser: {
+    subscriberId: string;
+    authorId: string;
+  }[];
+};
+
 export type ContextType = {
   prisma: PrismaClient;
   dataloaders: WeakMap<WeakKey, DataLoader<unknown, unknown, unknown>>;
+  users: UserContextType[];
 };
 
 export const UserType: GraphQLObjectType = new GraphQLObjectType({
@@ -30,19 +57,6 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
     balance: { type: GraphQLFloat },
     profile: {
       type: ProfileType,
-      //   resolve({ id }: ParamsWithId, _args, context: ContextType) {
-      //     const { prisma } = context;
-      //     // console.log('=== info User profile', id);
-
-      //     if (!id) return null;
-
-      //     return prisma.profile.findFirst({
-      //       where: { userId: id },
-      //       include: {
-      //         memberType: true,
-      //       },
-      //     });
-      //   },
     },
     posts: {
       type: new GraphQLList(PostType),
@@ -81,15 +95,12 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
       type: new GraphQLList(UserType),
       resolve: async ({ id }: ParamsWithId, _args, context: ContextType, info) => {
         const { prisma, dataloaders } = context;
-
         let dl = dataloaders.get(info.fieldNodes);
 
         if (!dl) {
-          // console.log('=== info User subscribeTo');
-
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           dl = new DataLoader(async (ids: any): Promise<[]> => {
-            const rows = await prisma.user.findMany({
+            /* const rows = await prisma.user.findMany({
               where: {
                 subscribedToUser: {
                   some: {
@@ -105,11 +116,24 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
             });
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            return ids.map((id) =>
+            const res = ids.map((id) =>
               rows.filter(
                 (row) =>
                   row.subscribedToUser.filter((el) => el.subscriberId === id).length,
               ),
+            ); */
+
+            if (!context.users.length) {
+              context.users = await getAllUsers(prisma);
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            return ids.map((id) =>
+              context.users
+                .find((row) => row.id === id)
+                ?.userSubscribedTo.map((e) => {
+                  return context.users.find((u) => u.id === e.authorId);
+                }),
             );
           });
 
@@ -121,9 +145,7 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
     },
     subscribedToUser: {
       type: new GraphQLList(UserType),
-      resolve: ({ id }: ParamsWithId, _args, context: ContextType, info) => {
-        const { prisma, dataloaders } = context;
-
+      resolve: async ({ id }: ParamsWithId, _args, context: ContextType, info) => {
         // console.log('=== info User subscribedToUser', id);
 
         // const parsedResolveInfoFragment = parseResolveInfo(resolveInfo) as ResolveTree;
@@ -141,6 +163,7 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
         // [App] }
         // */
 
+        const { prisma, dataloaders } = context;
         let dl = dataloaders.get(info.fieldNodes);
 
         if (!dl) {
@@ -148,7 +171,7 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           dl = new DataLoader(async (ids: any): Promise<[]> => {
-            const rows = await prisma.user.findMany({
+            /* const rows = await prisma.user.findMany({
               where: {
                 userSubscribedTo: {
                   some: {
@@ -164,10 +187,23 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
             });
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            return ids.map((id) =>
+            const res = await ids.map((id) =>
               rows.filter(
                 (row) => row.userSubscribedTo.filter((el) => el.authorId === id).length,
               ),
+            ); */
+
+            if (!context.users.length) {
+              context.users = await getAllUsers(prisma);
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+            return ids.map((id) =>
+              context.users
+                .find((row) => row.id === id)
+                ?.subscribedToUser.map((e) => {
+                  return context.users.find((u) => u.id === e.subscriberId);
+                }),
             );
           });
 
@@ -315,5 +351,17 @@ export const ChangeProfileInput = new GraphQLInputObjectType({
     yearOfBirth: { type: GraphQLInt },
   }),
 });
+
+export const getAllUsers = async (prisma: PrismaClient) => {
+  return await prisma.user.findMany({
+    // take: 5,
+    include: {
+      profile: true,
+      posts: true,
+      subscribedToUser: true,
+      userSubscribedTo: true,
+    },
+  });
+};
 
 export type ParamsWithId = { id: string };

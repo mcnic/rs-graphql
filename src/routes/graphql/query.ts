@@ -8,6 +8,7 @@ import {
   PostType,
   ProfileType,
   UserType,
+  getAllUsers,
 } from './types/prismaTypes.js';
 
 export const rootQuery = new GraphQLObjectType({
@@ -75,22 +76,14 @@ export const rootQuery = new GraphQLObjectType({
     },
     users: {
       type: new GraphQLList(UserType),
-      resolve(_parent, _args, context: ContextType) {
+      async resolve(_parent, _args, context: ContextType) {
         const { prisma } = context;
 
-        return prisma.user.findMany({
-          // take: 10,
-          include: {
-            profile: {
-              include: {
-                memberType: true,
-              },
-            },
-            posts: true,
-            subscribedToUser: true,
-            userSubscribedTo: true,
-          },
-        });
+        if (!context.users.length) {
+          context.users = await getAllUsers(prisma);
+        }
+
+        return context.users;
       },
     },
     user: {
@@ -108,12 +101,10 @@ export const rootQuery = new GraphQLObjectType({
             id,
           },
           include: {
-            profile: {
-              include: {
-                memberType: true,
-              },
-            },
+            profile: true,
             posts: true,
+            subscribedToUser: true,
+            userSubscribedTo: true,
           },
         });
       },

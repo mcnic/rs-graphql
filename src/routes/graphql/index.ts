@@ -1,12 +1,12 @@
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import { GraphQLSchema, graphql, validate, DocumentNode, parse } from 'graphql';
 import { createGqlResponseSchema, gqlResponseSchema } from './schemas.js';
 import { rootQuery } from './query.js';
-import { GraphQLSchema, graphql, validate, DocumentNode, parse } from 'graphql';
-import depthLimit from 'graphql-depth-limit';
 import { rootMutation } from './mutation.js';
+import depthLimit from 'graphql-depth-limit';
 import DataLoader from 'dataloader';
 
-const dataloaders = new WeakMap<WeakKey, DataLoader<unknown, unknown, unknown>>(); //<any, TUser4Subscribers>();
+const dataloaders = new WeakMap<WeakKey, DataLoader<unknown, unknown, unknown>>();
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   const { prisma } = fastify;
@@ -41,6 +41,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         contextValue: {
           prisma,
           dataloaders,
+          users: [],
         },
       });
 

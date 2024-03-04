@@ -62,8 +62,6 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
         let dl = dataloaders.get(info.fieldNodes);
 
         if (!dl) {
-          // console.log('=== info User post');
-
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           dl = new DataLoader(async (ids: any): Promise<[]> => {
             const rows = await prisma.post.findMany({
@@ -95,29 +93,6 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
         if (!dl) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           dl = new DataLoader(async (ids: any): Promise<[]> => {
-            /* const rows = await prisma.user.findMany({
-              where: {
-                subscribedToUser: {
-                  some: {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                    subscriberId: { in: ids },
-                  },
-                },
-              },
-              include: {
-                userSubscribedTo: true,
-                subscribedToUser: true,
-              },
-            });
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            const res = ids.map((id) =>
-              rows.filter(
-                (row) =>
-                  row.subscribedToUser.filter((el) => el.subscriberId === id).length,
-              ),
-            ); */
-
             if (!context.users.length) {
               const include = {
                 userSubscribedTo: true,
@@ -146,53 +121,12 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
     subscribedToUser: {
       type: new GraphQLList(UserType),
       resolve: async ({ id }: ParamsWithId, _args, context: ContextType, info) => {
-        // console.log('=== info User subscribedToUser', id);
-
-        // const parsedResolveInfoFragment = parseResolveInfo(resolveInfo) as ResolveTree;
-        // const { fields } = simplifyParsedResolveInfoFragmentWithType(
-        //   parsedResolveInfoFragment,
-        //   resolveInfo.returnType,
-        // );
-        // console.log('=== fields', fields, parsedResolveInfoFragment);
-        // /*
-        // [App] === fields { id: { name: 'id', alias: 'id', args: {}, fieldsByTypeName: {} } } {
-        // [App]   name: 'subscribedToUser',
-        // [App]   alias: 'subscribedToUser',
-        // [App]   args: {},
-        // [App]   fieldsByTypeName: { User: { id: [Object] } }
-        // [App] }
-        // */
-
         const { prisma, dataloaders } = context;
         let dl = dataloaders.get(info.fieldNodes);
 
         if (!dl) {
-          // console.log('=== info User subscribedToUser', id);
-
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           dl = new DataLoader(async (ids: any): Promise<[]> => {
-            /* const rows = await prisma.user.findMany({
-              where: {
-                userSubscribedTo: {
-                  some: {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                    authorId: { in: ids },
-                  },
-                },
-              },
-              include: {
-                userSubscribedTo: true,
-                subscribedToUser: true,
-              },
-            });
-
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-            const res = await ids.map((id) =>
-              rows.filter(
-                (row) => row.userSubscribedTo.filter((el) => el.authorId === id).length,
-              ),
-            ); */
-
             if (!context.users.length) {
               const include = {
                 userSubscribedTo: true,
@@ -273,8 +207,6 @@ export const ProfileType = new GraphQLObjectType({
         if (!dl) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           dl = new DataLoader(async (ids: any): Promise<[]> => {
-            // console.log('=== info MemberType');
-
             const rows = await prisma.memberType.findMany({
               where: {
                 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -357,7 +289,7 @@ export const ChangeProfileInput = new GraphQLInputObjectType({
   }),
 });
 
-export type TFields = { [key: string]: any };
+export type TFields = { [key: string]: unknown };
 
 export const getAllUsers = async (prisma: PrismaClient, include = {}) => {
   return await prisma.user.findMany({

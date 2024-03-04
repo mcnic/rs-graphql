@@ -7,9 +7,15 @@ import {
   ParamsWithId,
   PostType,
   ProfileType,
+  TFields,
   UserType,
   getAllUsers,
 } from './types/prismaTypes.js';
+import {
+  ResolveTree,
+  parseResolveInfo,
+  simplifyParsedResolveInfoFragmentWithType,
+} from 'graphql-parse-resolve-info';
 
 export const rootQuery = new GraphQLObjectType({
   name: 'Query',
@@ -64,7 +70,6 @@ export const rootQuery = new GraphQLObjectType({
       },
       async resolve(_parent, { id }: ParamsWithId, context: ContextType) {
         const { prisma } = context;
-        // console.log('=== info post');
 
         return await prisma.post.findUnique({
           where: { id },
@@ -76,11 +81,23 @@ export const rootQuery = new GraphQLObjectType({
     },
     users: {
       type: new GraphQLList(UserType),
-      async resolve(_parent, _args, context: ContextType) {
+      async resolve(_parent, _args, context: ContextType, info) {
         const { prisma } = context;
 
         if (!context.users.length) {
-          context.users = await getAllUsers(prisma);
+          const parsedResolveInfoFragment = parseResolveInfo(info) as ResolveTree;
+          const fields: TFields = simplifyParsedResolveInfoFragmentWithType(
+            parsedResolveInfoFragment,
+            info.returnType,
+          ).fields;
+          const include = {
+            profile: true,
+            posts: true,
+          };
+          if (fields.subscribedToUser) include['subscribedToUser'] = true;
+          if (fields.userSubscribedTo) include['userSubscribedTo'] = true;
+
+          context.users = await getAllUsers(prisma, include);
         }
 
         return context.users;
@@ -113,7 +130,6 @@ export const rootQuery = new GraphQLObjectType({
       type: new GraphQLList(ProfileType),
       async resolve(_parent, _args, context: ContextType) {
         const { prisma } = context;
-        // console.log('=== info profiles');
 
         return prisma.profile.findMany({
           include: {
@@ -131,7 +147,6 @@ export const rootQuery = new GraphQLObjectType({
       },
       async resolve(_parent, { id }: ParamsWithId, context: ContextType) {
         const { prisma } = context;
-        // console.log('=== info profile');
 
         const profile = await prisma.profile.findFirst({
           where: { id },

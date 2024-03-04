@@ -11,33 +11,28 @@ import {
 } from 'graphql';
 import { UUIDType } from './uuid.js';
 import DataLoader from 'dataloader';
-import {
-  ResolveTree,
-  parseResolveInfo,
-  simplifyParsedResolveInfoFragmentWithType,
-} from 'graphql-parse-resolve-info';
 
 export type UserContextType = {
   id: string;
   name: string;
-  profile: {
+  profile?: {
     id: string;
     isMale: boolean;
     yearOfBirth: number;
     userId: string;
     memberTypeId: string;
   } | null;
-  posts: {
+  posts?: {
     id: string;
     title: string;
     content: string;
     authorId: string;
   }[];
-  userSubscribedTo: {
+  userSubscribedTo?: {
     subscriberId: string;
     authorId: string;
   }[];
-  subscribedToUser: {
+  subscribedToUser?: {
     subscriberId: string;
     authorId: string;
   }[];
@@ -124,14 +119,19 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
             ); */
 
             if (!context.users.length) {
-              context.users = await getAllUsers(prisma);
+              const include = {
+                userSubscribedTo: true,
+                subscribedToUser: true,
+              };
+
+              context.users = await getAllUsers(prisma, include);
             }
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             return ids.map((id) =>
               context.users
                 .find((row) => row.id === id)
-                ?.userSubscribedTo.map((e) => {
+                ?.userSubscribedTo?.map((e) => {
                   return context.users.find((u) => u.id === e.authorId);
                 }),
             );
@@ -194,14 +194,19 @@ export const UserType: GraphQLObjectType = new GraphQLObjectType({
             ); */
 
             if (!context.users.length) {
-              context.users = await getAllUsers(prisma);
+              const include = {
+                userSubscribedTo: true,
+                subscribedToUser: true,
+              };
+
+              context.users = await getAllUsers(prisma, include);
             }
 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
             return ids.map((id) =>
               context.users
                 .find((row) => row.id === id)
-                ?.subscribedToUser.map((e) => {
+                ?.subscribedToUser?.map((e) => {
                   return context.users.find((u) => u.id === e.subscriberId);
                 }),
             );
@@ -352,15 +357,12 @@ export const ChangeProfileInput = new GraphQLInputObjectType({
   }),
 });
 
-export const getAllUsers = async (prisma: PrismaClient) => {
+export type TFields = { [key: string]: any };
+
+export const getAllUsers = async (prisma: PrismaClient, include = {}) => {
   return await prisma.user.findMany({
     // take: 5,
-    include: {
-      profile: true,
-      posts: true,
-      subscribedToUser: true,
-      userSubscribedTo: true,
-    },
+    include,
   });
 };
 
